@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ROTA ESTRATÉGICA - Aliança Distribuidora</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Rota Estratégica">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" sizes="192x192" href="URL_DO_LOGO_DA_REVENDA">
+<link rel="apple-touch-icon" href="URL_DO_LOGO_DA_REVENDA">
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+:root{--green:#1f5b2f;--orange:#ff8c00;--card:#fff}
+body{font-family:Arial,sans-serif;margin:0;background:#f6f7f8;color:#222}
+header{background:var(--green);color:#fff;padding:14px 16px;border-bottom:3px solid var(--orange); display:flex;align-items:center;justify-content:space-between;}
+header img{max-height:40px;margin-right:15px;border-radius:4px}
+header h1{margin:0;font-size:22px}
+.container{max-width:980px;margin:18px auto;padding:18px}
+form{background:var(--card);padding:18px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+h1,h2{margin:0 0 12px}
+h2{font-size:16px;color:var(--green);margin:20px 0 10px;padding-top:10px;border-top:1px dashed #ddd}
+label{display:block;margin:8px 0 4px;font-weight:600}
+input[type=text],textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;background:#fff}
+.checks{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.checks label{display:inline-flex;align-items:center;gap:6px;background:#f7f7f7;padding:6px 8px;border-radius:6px;border:1px solid #eee; cursor:pointer}
+.checks label:hover { background: #eee; }
+.checks.vertical label { width: 100%; box-sizing: border-box; }
+button{background:var(--green);color:#fff;border:0;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer;margin-top:15px}
+.delete-btn{background-color:#dc3545;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:12px}
+.delete-btn:hover{background-color:#c82333}
+#tabela-registros{margin-top:30px;background:#fff;border-radius:10px;padding:15px;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+table{width:100%;border-collapse:collapse}
+th,td{border:1px solid #ddd;padding:8px;text-align:left;vertical-align:top}
+th{background-color:var(--green);color:#fff}
+img{max-width:100px;border-radius:8px;margin:2px;cursor:pointer}
+footer { text-align: center; margin-top: 25px; padding: 10px; font-size: 12px; color: #777; }
+@media(max-width:720px){.checks{flex-direction:column}}
+.tools { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px; }
+.summary { background:#fff;padding:12px;border-radius:8px;margin-bottom:12px }
+/* Estilos para a nova seção de análise */
+#analise-cliente-section { margin-top: 30px; padding-top: 15px; border-top: 1px solid #ccc; }
+#analise-cliente-resultado { 
+    background: #e6f7ff; 
+    padding: 15px; 
+    border-radius: 8px; 
+    margin-top: 15px; 
+    border: 1px solid #b3e0ff;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+}
+.analise-card {
+    background: #fff;
+    padding: 12px;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+.analise-card h4 {
+    margin-top: 0;
+    font-size: 14px;
+    color: var(--orange);
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+.analise-card ul {
+    list-style-type: none;
+    padding-left: 0;
+    margin: 0;
+}
+.analise-card li {
+    font-size: 13px;
+    padding: 2px 0;
+}
+.analise-card strong { color: var(--green); }
+.analise-card .percent { float: right; font-weight: bold; color: #333; }
+.analise-card .bar-container { height: 8px; background: #eee; border-radius: 4px; margin-top: 4px; }
+.analise-card .bar { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.5s; }
+.analise-card.warning .bar { background: #ff4500; } 
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex;align-items:center">
+    <img src="URL_DO_LOGO_DA_REVENDA" alt="Logo Aliança Distribuidora">
+    <h1>ROTA ESTRATÉGICA</h1>
+  </div>
+  <div id="top-counters" style="text-align:right;font-size:13px">
+    </div>
+</header>
+
+<main class="container">
+<form id="pesquisaForm" autocomplete="off">
+  <h2>Dados do Cliente</h2>
+  <label>CÓDIGO - NOME CLIENTE</label>
+  <input name="cliente" id="input-cliente-form" placeholder="Ex: 123 - Padaria X" required />
+
+  <h2>COLABORADOR</h2>
+  <div class="checks vertical">
+    <label><input type="radio" name="colaborador" value="GC" required> GC</label>
+    <label><input type="radio" name="colaborador" value="GV"> GV</label>
+    <label><input type="radio" name="colaborador" value="SV"> SV</label>
+    <label><input type="radio" name="colaborador" value="TRADE"> TRADE</label>
+    <label><input type="radio" name="colaborador" value="Proprietário/Diretor/Representante legal"> Rota - Proprietário / Diretor / Representante legal</label>
+  </div>
+
+  <label>As visitas de mercado estão sendo feitas pelo colaborador responsável?</label>
+  <div class="checks">
+    <label><input type="radio" name="visita_resp" value="SIM" required> SIM</label>
+    <label><input type="radio" name="visita_resp" value="NAO"> NÃO</label>
+  </div>
+
+  <h2>TIPOS DE ROTAS</h2>
+  <div class="checks vertical">
+    <label><input type="radio" name="tipo_rota" value="FDS: 10 PDVs - GC" required> FDS: 10 PDVs - GC</label>
+    <label><input type="radio" name="tipo_rota" value="FDS: 20 PDVs - GV"> FDS: 20 PDVs - GV</label>
+    <label><input type="radio" name="tipo_rota" value="Coaching rotina básica com vendedor : 20 PDVs - GV"> Coaching rotina básica com vendedor : 20 PDVs - GV</label>
+    <label><input type="radio" name="tipo_rota" value="10 PDVs maior potencial COMPASS - RGB - GV"> 10 PDVs maior potencial COMPASS - RGB - GV</label>
+    <label><input type="radio" name="tipo_rota" value="FDS: 20 PDVs - SV"> FDS: 20 PDVs - SV</label>
+    <label><input type="radio" name="tipo_rota" value="Coaching rotina básica - mínimo 5 PDV - SV"> Coaching rotina básica mínimo 5 PDVs por vendedor - SV</label>
+    <label><input type="radio" name="tipo_rota" value="Foco HEISHOP - 10 PDVs - SV"> Foco HEISHOP - 10 PDVs - SV</label>
+    <label><input type="radio" name="tipo_rota" value="10 PDVs maior potencial base COMPASS - SÓCIO"> 10 PDVs maior potencial base COMPASS - SÓCIO</label>
+    <label><input type="radio" name="tipo_rota" value="10 PDVs maiores quedas mês anterior - SÓCIO"> 10 PDVs maiores quedas mês anterior - SÓCIO</label>
+    <label><input type="radio" name="tipo_rota" value="Rotina básica distribuição - ESTOQUISTA"> Resultado da rotina básica de distribuição - ESTOQUISTA</label>
+    <label><input type="radio" name="tipo_rota" value="Inspeção de SHE"> Inspeção de SHE</label>
+    <label><input type="radio" name="tipo_rota" value="Min 40 PDVs/TRADE"> Mínimo de 40 PDVs/TRADE</label>
+    <label><input type="radio" name="tipo_rota" value="10 PDVs Coaching GC"> 10 PDVs - Coaching rotina básica com GC</label>
+    <label><input type="radio" name="tipo_rota" value="10 PDVs foco maiores quedas GC"> 10 PDVs foco maiores quedas em RGB vs mês anterior GC</label>
+  </div>
+
+  <h2>Resultado e análise da visita ao mercado</h2>
+  <label>a. Resultado da FDS (todos os 4P)</label>
+  <div class="checks">
+    <label><input type="checkbox" name="resultado_fds" value="Presença"> Presença</label>
+    <label><input type="checkbox" name="resultado_fds" value="Promoção"> Promoção</label>
+    <label><input type="checkbox" name="resultado_fds" value="Posicionamento"> Posicionamento</label>
+    <label><input type="checkbox" name="resultado_fds" value="Preço"> Preço</label>
+    <label><input type="checkbox" name="resultado_fds" value="NÃO SE APLICA"> NÃO SE APLICA</label>
+  </div>
+
+  <label>b. Média SKUs/PDV</label>
+  <div class="checks">
+    <label><input type="radio" name="media_sku" value="1 a 2 SKUs" required> 1 a 2 SKUs</label>
+    <label><input type="radio" name="media_sku" value="2 a 3 SKUs"> 2 a 3 SKUs</label>
+    <label><input type="radio" name="media_sku" value="3 a 4 SKUs"> 3 a 4 SKUs</label>
+    <label><input type="radio" name="media_sku" value="4 a 5 SKUs"> 4 a 5 SKUs</label>
+    <label><input type="radio" name="media_sku" value="+6 SKUs"> +6 SKUs</label>
+    <label><input type="radio" name="media_sku" value="NÃO SE APLICA"> NÃO SE APLICA</label>
+  </div>
+
+  <label>c. SKUs estratégicos</label>
+  <div class="checks">
+    <label><input type="checkbox" name="skus_estrategicos" value="HEINEKEN ZERO"> HEINEKEN ZERO</label>
+    <label><input type="checkbox" name="skus_estrategicos" value="FYS"> FYS</label>
+    <label><input type="checkbox" name="skus_estrategicos" value="BADEN"> BADEN</label>
+    <label><input type="checkbox" name="skus_estrategicos" value="NÃO SE APLICA"> NÃO SE APLICA</label>
+  </div>
+
+  <label>d. Indicadores estratégicos</label>
+  <div class="checks">
+    <label><input type="radio" name="foco_estrategico" value="HNK zero Vs regular" required> HNK zero Vs regular</label>
+    <label><input type="radio" name="foco_estrategico" value="HEINEKEN REGULAR"> HEINEKEN REGULAR</label>
+    <label><input type="radio" name="foco_estrategico" value="HEINEKEN ZERO"> HEINEKEN ZERO</label>
+    <label><input type="radio" name="foco_estrategico" value="HEINEKEN ZERO VS REGULAR"> HEINEKEN ZERO VS REGULAR</label>
+    <label><input type="radio" name="foco_estrategico" value="NÃO SE APLICA"> NÃO SE APLICA</label>
+  </div>
+
+  <label>e. Cadastrado no heishop?</label>
+  <div class="checks">
+    <label><input type="radio" name="heishop" value="SIM" required> SIM</label>
+    <label><input type="radio" name="heishop" value="NAO"> NÃO</label>
+  </div>
+
+  <label>g. Fotos do PDV (Tire a foto direto ou selecione da galeria)</label>
+  <input type="file" id="fotoPDV" accept="image/*" capture="environment" multiple />
+
+  <label>Observações Adicionais</label>
+  <textarea name="observacoes" rows="4" placeholder="Descreva os pontos de melhoria ou observações importantes."></textarea>
+
+  <button type="submit">Enviar Registro</button>
+</form>
+
+<div class="tools">
+  <button onclick="exportarExcel()">📊 Exportar para Excel</button>
+  <button onclick="enviarPorEmail()">✉️ Enviar por E-mail</button>
+  <button onclick="imprimirResumo()">🖨️ Imprimir</button>
+  <button onclick="limparTudo()">🗑️ Limpar Todos os Registros</button>
+</div>
+
+<div id="analise-cliente-section">
+  <h2>Análise Consolidada</h2>
+  <label>Análise por Cliente (Salva Histórico)</label>
+  <input type="text" id="input-cliente-analise" placeholder="Digite o CÓDIGO - NOME CLIENTE para analisar" />
+  <div style="display:flex; gap:10px; margin-top:10px;">
+    <button onclick="analisarCliente()" style="flex-grow:1;">🔎 Analisar Cliente e Salvar Histórico</button>
+    <button onclick="analisarGlobal()" style="flex-grow:1; background-color: #3e8e41;">⭐ Média de Todos os Clientes Analisados</button>
+  </div>
+  <div id="analise-cliente-resultado">
+    <p>Use os botões acima para iniciar a análise por cliente ou a média global.</p>
+  </div>
+</div>
+<div id="tabela-registros"></div>
+
+<script>
+const form = document.getElementById('pesquisaForm');
+const tabela = document.getElementById('tabela-registros');
+const topCounters = document.getElementById('top-counters');
+const inputClienteAnalise = document.getElementById('input-cliente-analise');
+const analiseResultado = document.getElementById('analise-cliente-resultado');
+
+window.deleteRegistro = deleteRegistro;
+window.analisarCliente = analisarCliente;
+window.analisarGlobal = analisarGlobal;
+// window.deleteAnaliseHistorica = deleteAnaliseHistorica; // REMOVIDO
+// window.reconstruirAnaliseHistorica = reconstruirAnaliseHistorica; // REMOVIDO
+
+/* --- captura dados do form (mantido) --- */
+function getFormData(f){
+  const data = {};
+  const formData = new FormData(f);
+  for (const [k, v] of formData.entries()) {
+    const el = f.querySelector(`[name="${k}"]`);
+    if (!el) continue;
+    if (el.type === 'checkbox') {
+      const all = f.querySelectorAll(`[name="${k}"][type="checkbox"]`);
+      if (all.length > 1) {
+        if (!data[k]) data[k] = [];
+        data[k].push(v);
+        continue;
+      }
+    }
+    data[k] = v;
+  }
+  const files = document.getElementById('fotoPDV').files;
+  data.fotos = [];
+  for (let i=0;i<files.length;i++){
+    data.fotos.push(files[i].name + ' (Local)');
+  }
+  data.timestamp = new Date().toLocaleString("pt-BR",{hour12:false});
+  return data;
+}
+
+/* --- Funções Auxiliares de Renderização e Contagem (mantido) --- */
+function calcularContagens(registros){
+  const resumo = {
+    total: registros.length,
+    porColaborador: {},
+    porTipo: {},
+    porVisitaResp: {},
+    porResultadoFDS: {},
+    porMediaSKU: {},
+    porSKUEstrategico: {},
+    porFocoEstrategico: {},
+    porHeishop: {}
+  };
+
+  registros.forEach(r => {
+    // Campos Simples
+    if (r.colaborador) resumo.porColaborador[r.colaborador] = (resumo.porColaborador[r.colaborador]||0)+1;
+    if (r.tipo_rota) resumo.porTipo[r.tipo_rota] = (resumo.porTipo[r.tipo_rota]||0)+1;
+    if (r.visita_resp) resumo.porVisitaResp[r.visita_resp] = (resumo.porVisitaResp[r.visita_resp]||0)+1;
+    if (r.media_sku) resumo.porMediaSKU[r.media_sku] = (resumo.porMediaSKU[r.media_sku]||0)+1;
+    if (r.foco_estrategico) resumo.porFocoEstrategico[r.foco_estrategico] = (resumo.porFocoEstrategico[r.foco_estrategico]||0)+1;
+    if (r.heishop) resumo.porHeishop[r.heishop] = (resumo.porHeishop[r.heishop]||0)+1;
+
+    // Campos Multiplos (Checkbox)
+    if (Array.isArray(r.resultado_fds)) {
+        r.resultado_fds.forEach(v => {
+            resumo.porResultadoFDS[v] = (resumo.porResultadoFDS[v]||0)+1;
+        });
+    }
+    if (Array.isArray(r.skus_estrategicos)) {
+        r.skus_estrategicos.forEach(v => {
+            resumo.porSKUEstrategico[v] = (resumo.porSKUEstrategico[v]||0)+1;
+        });
+    }
+  });
+  return resumo;
+}
+
+function renderResumoHTML(registros){
+  if (registros.length === 0) return '<div class="summary"><em>Nenhum registro ainda.</em></div>';
+  const resumo = calcularContagens(registros);
+  let html = '<div class="summary"><strong>Total de rotas registradas:</strong> ' + resumo.total + '<br/><br/>';
+  html += '<strong>Por Colaborador:</strong><ul>';
+  for(const c in resumo.porColaborador) html += `<li>${c}: ${resumo.porColaborador[c]}</li>`;
+  html += '</ul><strong>Por Tipo de Rota:</strong><ul>';
+  for(const t in resumo.porTipo) html += `<li>${t}: ${resumo.porTipo[t]}</li>`;
+  html += '</ul></div>';
+  return html;
+}
+
+function atualizarTopCounters(registros){
+  const resumo = calcularContagens(registros);
+  let text = `Total: ${resumo.total}`;
+  const topColabs = Object.entries(resumo.porColaborador).sort(([,a],[,b]) => b-a).slice(0,3).map(e=>`${e[0]}:${e[1]}`).join(' | ');
+  if (topColabs) text += ' — ' + topColabs;
+  topCounters.innerText = text;
+}
+
+function renderTable(){
+  const registros = JSON.parse(localStorage.getItem('registros')||'[]');
+  atualizarTopCounters(registros);
+  const resumoGlobalHtml = renderResumoHTML(registros); 
+  
+  if (registros.length === 0) {
+      tabela.innerHTML = resumoGlobalHtml;
+      // renderHistoricoAnalise(); // REMOVIDO
+      return;
+  }
+  
+  let html = '<h2>Últimos Registros ('+registros.length+')</h2><table><tr>';
+  const keys = Object.keys(registros[0]);
+  keys.forEach(k => html += '<th>'+k.charAt(0).toUpperCase()+k.slice(1).replace(/_/g,' ')+'</th>');
+  html += '<th>Ações</th></tr>';
+  registros.forEach((r,index)=>{
+    html += '<tr>';
+    keys.forEach(k=>{
+      const v = r[k];
+      if (k==='fotos') {
+        html += '<td>' + (v && v.length ? v.join(' ') : '') + '</td>';
+      } else if (Array.isArray(v)) {
+        html += '<td>' + v.join(', ') + '</td>';
+      } else {
+        html += '<td>' + (v!==undefined ? v : '') + '</td>';
+      }
+    });
+    html += `<td><button class="delete-btn" onclick="deleteRegistro(${index})">Apagar</button></td>`;
+    html += '</tr>';
+  });
+  html += '</table>';
+  tabela.innerHTML = resumoGlobalHtml + html;
+  // renderHistoricoAnalise(); // REMOVIDO
+}
+
+// --- Função para renderizar um card de análise (mantido) ---
+function renderAnaliseCard(titulo, contagens, totalVisitas, isWarningKey = null){
+    const baseTotal = totalVisitas || Object.values(contagens).reduce((a, b) => a + b, 0); 
+    
+    if (baseTotal === 0 || Object.keys(contagens).length === 0) return '';
+
+    const sortedContagens = Object.entries(contagens)
+        .sort(([, a], [, b]) => b - a);
+
+    let html = `<div class="analise-card"><h4>${titulo} (${baseTotal} Base)</h4><ul>`;
+
+    sortedContagens.forEach(([key, count]) => {
+        if (count === 0 || (key === 'NÃO SE APLICA' && baseTotal === totalVisitas)) return; 
+        
+        const percent = ((count / baseTotal) * 100).toFixed(1);
+        const barClass = (isWarningKey && key.toUpperCase().includes(isWarningKey)) ? 'warning' : '';
+        const barColor = (key === 'Preço' || key === 'Promoção') ? 'orange' : 'green';
+        
+        html += `
+            <li class="${barClass}">
+                ${key} <span class="percent">${percent}%</span>
+                <div class="bar-container"><div class="bar" style="width: ${percent}%; background: var(--${barColor});" title="${count} respostas"></div></div>
+            </li>
+        `;
+    });
+    
+    if (totalVisitas > 0 && contagens['NÃO SE APLICA'] && contagens['NÃO SE APLICA'] > 0){
+         html += `<li>NÃO SE APLICA: ${contagens['NÃO SE APLICA']} visitas</li>`;
+    }
+    
+    html += '</ul></div>';
+    return html;
+}
+
+// --- Função de Média Global (NOVO) ---
+function calcularMediaGlobal(){
+  const historico = JSON.parse(localStorage.getItem('analises_historico') || '[]');
+  
+  if (historico.length === 0) return null;
+
+  const campos = ['porColaborador', 'porTipo', 'porVisitaResp', 'porResultadoFDS', 'porMediaSKU', 'porSKUEstrategico', 'porFocoEstrategico', 'porHeishop'];
+  const mediaGlobal = {};
+  let totalVisitasGlobal = 0;
+
+  // 1. Inicializa a estrutura de contagem global
+  campos.forEach(campo => mediaGlobal[campo] = {});
+
+  // 2. Agrega as contagens de todos os históricos
+  historico.forEach(analise => {
+    totalVisitasGlobal += analise.total_visitas;
+    
+    campos.forEach(campo => {
+      const counts = analise.resumo_dados[campo] || {};
+      for (const key in counts) {
+        mediaGlobal[campo][key] = (mediaGlobal[campo][key] || 0) + counts[key];
+      }
+    });
+  });
+
+  return { mediaGlobal, totalVisitasGlobal, totalClientes: historico.length };
+}
+
+function analisarGlobal(){
+    const dados = calcularMediaGlobal();
+    
+    if (!dados) {
+        analiseResultado.innerHTML = '<p>⚠️ Nenhum histórico de análise salvo para calcular a média global. Salve algumas análises por cliente primeiro.</p>';
+        return;
+    }
+
+    const { mediaGlobal, totalVisitasGlobal, totalClientes } = dados;
+
+    let html = `<h3>Média Consolidada Global</h3>`;
+    html += `<p style="font-size:14px;">Média baseada em <strong>${totalVisitasGlobal} registros de visitas</strong> em <strong>${totalClientes} clientes</strong> analisados.</p>`;
+
+    // 1. Colaborador
+    html += renderAnaliseCard('Colaborador Envolvido (Global)', mediaGlobal.porColaborador, totalVisitasGlobal);
+    
+    // 2. Visita Responsável
+    html += renderAnaliseCard('Visita pelo Responsável (Global)', mediaGlobal.porVisitaResp, totalVisitasGlobal, 'NAO');
+
+    // 3. Tipo de Rota
+    html += renderAnaliseCard('Tipos de Rotas Executadas (Global)', mediaGlobal.porTipo, totalVisitasGlobal);
+
+    // 4. Resultado da FDS (4P)
+    const fdsContagensValidas = Object.fromEntries(
+        Object.entries(mediaGlobal.porResultadoFDS).filter(([k]) => k !== 'NÃO SE APLICA')
+    );
+    const totalMensoesFDS = Object.values(fdsContagensValidas).reduce((acc, curr) => acc + curr, 0);
+
+    if (totalMensoesFDS > 0) {
+        let cardHTML = `<div class="analise-card"><h4>Resultado FDS (4P) - ${totalMensoesFDS} Menções Totais</h4><ul>`;
+        Object.entries(fdsContagensValidas).sort(([, a], [, b]) => b - a).forEach(([key, count]) => {
+            const percent = ((count / totalMensoesFDS) * 100).toFixed(1); 
+            const barColor = (key === 'Preço' || key === 'Promoção') ? 'orange' : 'green'; 
+            cardHTML += `
+                <li>
+                    ${key} <span class="percent">${percent}%</span>
+                    <div class="bar-container"><div class="bar" style="width: ${percent}%; background: var(--${barColor});" title="${count} menções"></div></div>
+                </li>
+            `;
+        });
+        if (mediaGlobal.porResultadoFDS['NÃO SE APLICA'] && mediaGlobal.porResultadoFDS['NÃO SE APLICA'] > 0) {
+             cardHTML += `<li>NÃO SE APLICA: ${mediaGlobal.porResultadoFDS['NÃO SE APLICA']} visitas.</li>`;
+        }
+        cardHTML += '</ul></div>';
+        html += cardHTML;
+    }
+
+    // 5. Média SKUs/PDV
+    html += renderAnaliseCard('Média SKUs/PDV (Global)', mediaGlobal.porMediaSKU, totalVisitasGlobal);
+
+    // 6. SKUs Estratégicos
+    const skusContagensValidas = Object.fromEntries(
+        Object.entries(mediaGlobal.porSKUEstrategico).filter(([k]) => k !== 'NÃO SE APLICA')
+    );
+    const totalMensoesSKU = Object.values(skusContagensValidas).reduce((acc, curr) => acc + curr, 0);
+    if (totalMensoesSKU > 0) {
+        let cardHTML = `<div class="analise-card"><h4>SKUs Estratégicos - ${totalMensoesSKU} Menções Totais</h4><ul>`;
+        Object.entries(skusContagensValidas).sort(([, a], [, b]) => b - a).forEach(([key, count]) => {
+            const percent = ((count / totalMensoesSKU) * 100).toFixed(1);
+            cardHTML += `
+                <li>
+                    ${key} <span class="percent">${percent}%</span>
+                    <div class="bar-container"><div class="bar" style="width: ${percent}%;"></div></div>
+                </li>
+            `;
+        });
+        cardHTML += '</ul></div>';
+        html += cardHTML;
+    }
+    
+    // 7. Heishop
+    html += renderAnaliseCard('Cadastrado no Heishop? (Global)', mediaGlobal.porHeishop, totalVisitasGlobal, 'NAO');
+
+    analiseResultado.innerHTML = html;
+}
+
+// --- Função de Análise por Cliente e Salvamento de Histórico (mantido) ---
+function analisarCliente(){
+  const nomeCliente = inputClienteAnalise.value.trim();
+  if (!nomeCliente) {
+    analiseResultado.innerHTML = '<p>Por favor, digite o <strong>CÓDIGO - NOME CLIENTE</strong> para iniciar a análise.</p>';
+    return;
+  }
+
+  const registros = JSON.parse(localStorage.getItem('registros')||'[]');
+  const registrosCliente = registros.filter(r => r.cliente && r.cliente.trim().toLowerCase() === nomeCliente.toLowerCase());
+  
+  if (registrosCliente.length === 0) {
+    analiseResultado.innerHTML = `<p>⚠️ Nenhum registro encontrado para o cliente: <strong>${nomeCliente}</strong></p>`;
+    return;
+  }
+  
+  const resumo = calcularContagens(registrosCliente);
+  const total = resumo.total;
+
+  // 1. Gera o HTML de resultado 
+  let html = `<h3>Resultados Históricos para: ${nomeCliente}</h3>`;
+  
+  html += renderAnaliseCard('Colaborador Envolvido', resumo.porColaborador, total);
+  html += renderAnaliseCard('Visita pelo Responsável', resumo.porVisitaResp, total, 'NAO');
+  html += renderAnaliseCard('Tipos de Rotas Executadas', resumo.porTipo, total);
+
+  const fdsContagensValidas = Object.fromEntries(
+    Object.entries(resumo.porResultadoFDS).filter(([k]) => k !== 'NÃO SE APLICA')
+  );
+  const totalMensoesFDS = Object.values(fdsContagensValidas).reduce((acc, curr) => acc + curr, 0);
+
+  if (totalMensoesFDS > 0) {
+     let cardHTML = `<div class="analise-card"><h4>Resultado FDS (4P) - ${totalMensoesFDS} Menções</h4><ul>`;
+     Object.entries(fdsContagensValidas).sort(([, a], [, b]) => b - a).forEach(([key, count]) => {
+        const percent = ((count / totalMensoesFDS) * 100).toFixed(1);
+        const barColor = (key === 'Preço' || key === 'Promoção') ? 'orange' : 'green'; 
+        cardHTML += `
+            <li>
+                ${key} <span class="percent">${percent}%</span>
+                <div class="bar-container"><div class="bar" style="width: ${percent}%; background: var(--${barColor});" title="${count} menções"></div></div>
+            </li>
+        `;
+     });
+     if (resumo.porResultadoFDS['NÃO SE APLICA'] && resumo.porResultadoFDS['NÃO SE APLICA'] > 0) {
+        cardHTML += `<li>NÃO SE APLICA: ${resumo.porResultadoFDS['NÃO SE APLICA']} visitas.</li>`;
+     }
+     cardHTML += '</ul></div>';
+     html += cardHTML;
+  }
+
+  html += renderAnaliseCard('Média SKUs/PDV', resumo.porMediaSKU, total);
+
+  const skusContagensValidas = Object.fromEntries(
+    Object.entries(resumo.porSKUEstrategico).filter(([k]) => k !== 'NÃO SE APLICA')
+  );
+  const totalMensoesSKU = Object.values(skusContagensValidas).reduce((acc, curr) => acc + curr, 0);
+  if (totalMensoesSKU > 0) {
+    let cardHTML = `<div class="analise-card"><h4>SKUs Estratégicos - ${totalMensoesSKU} Menções</h4><ul>`;
+    Object.entries(skusContagensValidas).sort(([, a], [, b]) => b - a).forEach(([key, count]) => {
+        const percent = ((count / totalMensoesSKU) * 100).toFixed(1);
+        cardHTML += `
+            <li>
+                ${key} <span class="percent">${percent}%</span>
+                <div class="bar-container"><div class="bar" style="width: ${percent}%;"></div></div>
+            </li>
+        `;
+    });
+    cardHTML += '</ul></div>';
+    html += cardHTML;
+  }
+  
+  html += renderAnaliseCard('Cadastrado no Heishop?', resumo.porHeishop, total, 'NAO');
+
+  analiseResultado.innerHTML = html; 
+
+  // 2. Salva o resultado no histórico
+  const analiseHistorica = {
+    cliente: nomeCliente,
+    timestamp: new Date().toLocaleString("pt-BR", { hour12: false }),
+    total_visitas: total,
+    resumo_dados: resumo 
+  };
+  
+  let historico = JSON.parse(localStorage.getItem('analises_historico') || '[]');
+  historico.unshift(analiseHistorica); 
+  localStorage.setItem('analises_historico', JSON.stringify(historico.slice(0, 50))); 
+  
+  // renderHistoricoAnalise(); // REMOVIDO
+}
+
+// --- Funções para Histórico de Análises (REMOVIDAS, mantendo apenas a exclusão de dados) ---
+
+function deleteAnaliseHistorica(index){
+  // if(!confirm('Tem certeza que deseja apagar este registro de análise histórica?')) return;
+  // let historico = JSON.parse(localStorage.getItem('analises_historico') || '[]');
+  // historico.splice(index, 1);
+  // localStorage.setItem('analises_historico', JSON.stringify(historico));
+  // renderHistoricoAnalise();
+}
+
+function reconstruirAnaliseHistorica(index){
+  // A lógica de reconstrução foi removida pois não há mais onde exibir o histórico.
+  // Caso precise reintroduzir, a função original está no arquivo.
+}
+
+
+/* --- Ações de Formulário e Exportação (mantido) --- */
+function deleteRegistro(index){
+  if(!confirm('Tem certeza que deseja apagar este registro?')) return;
+  const registros = JSON.parse(localStorage.getItem('registros')||'[]');
+  registros.splice(index,1);
+  localStorage.setItem('registros',JSON.stringify(registros));
+  renderTable();
+  if (inputClienteAnalise.value.trim() && !registros.find(r => r.cliente && r.cliente.trim().toLowerCase() === inputClienteAnalise.value.trim().toLowerCase())) {
+     analiseResultado.innerHTML = '<p>Use o campo acima para buscar os registros de um cliente e ver sua análise consolidada em todas as perguntas.</p>';
+  }
+}
+
+form.addEventListener('submit', e=>{
+  e.preventDefault();
+  const data = getFormData(form);
+  const registros = JSON.parse(localStorage.getItem('registros')||'[]');
+  registros.push(data);
+  localStorage.setItem('registros',JSON.stringify(registros));
+  
+  inputClienteAnalise.value = data.cliente; 
+  analisarCliente();
+  
+  form.reset();
+  renderTable();
+  alert('✅ Registro salvo!');
+});
+
+inputClienteAnalise.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') {
+        analisarCliente();
+    }
+});
+
+setInterval(renderTable, 3000);
+
+function exportarExcel(){
+  const registros = JSON.parse(localStorage.getItem('registros')||'[]');
+  if (registros.length === 0) return alert("Nenhum registro para exportar!");
+  const registrosParaExportar = registros.map(r => ({
+      ...r,
+      resultado_fds: Array.isArray(r.resultado_fds) ? r.resultado_fds.join(', ') : r.resultado_fds,
+      skus_estrategicos: Array.isArray(r.skus_estrategicos) ? r.skus_estrategicos.join(', ') : r.skus_estrategicos,
+      fotos: Array.isArray(r.fotos) ? r.fotos.join(', ') : r.fotos 
+  }));
+  const ws = XLSX.utils.json_to_sheet(registrosParaExportar);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Registros");
+  XLSX.writeFile(wb, "Rota_Estrategica.xlsx");
+}
+
+function gerarExcelBlob(){
+  return new Promise((resolve, reject) => {
+    try {
+      const registros = JSON.parse(localStorage.getItem('registros')||'[]');
+      const registrosParaExportar = registros.map(r => ({
+          ...r,
+          resultado_fds: Array.isArray(r.resultado_fds) ? r.resultado_fds.join(', ') : r.resultado_fds,
+          skus_estrategicos: Array.isArray(r.skus_estrategicos) ? r.skus_estrategicos.join(', ') : r.skus_estrategicos,
+          fotos: Array.isArray(r.fotos) ? r.fotos.join(', ') : r.fotos 
+      }));
+      const ws = XLSX.utils.json_to_sheet(registrosParaExportar);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Registros");
+      const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+      const blob = new Blob([wbout], {type:'application/octet-stream'});
+      resolve(blob);
+    } catch (err) { reject(err); }
+  });
+}
+
+async function enviarPorEmail(){
+  const registros = JSON.parse(localStorage.getItem('registros')||'[]');
+  if (registros.length === 0) return alert("Nenhum registro para enviar!");
+  try {
+    const blob = await gerarExcelBlob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Rota_Estrategica.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    const resumo = calcularContagens(registros);
+    let body = `Segue o resumo das rotas registradas.%0D%0A%0D%0ATotal de rotas: ${resumo.total}%0D%0A%0D%0APor colaborador:%0D%0A`;
+    for(const c in resumo.porColaborador) body += `${c}: ${resumo.porColaborador[c]}%0D%0A`;
+    body += `%0D%0APor tipo de rota:%0D%0A`;
+    for(const t in resumo.porTipo) body += `${t}: ${resumo.porTipo[t]}%0D%0A`;
+    body += `%0D%0AObservação: o arquivo "Rota_Estrategica.xlsx" foi baixado automaticamente. Por favor, anexe-o ao enviar o e-mail.`;
+    const subject = encodeURIComponent('Envio de Registros - Rota Estratégica');
+    setTimeout(()=>{ window.location.href = `mailto:?subject=${subject}&body=${body}`; }, 500);
+    setTimeout(()=>URL.revokeObjectURL(url), 10000);
+  } catch (err) {
+    console.error(err);
+    alert('Erro ao gerar o arquivo Excel: ' + err.message);
+  }
+}
+
+function imprimirResumo(){
+  const registros = JSON.parse(localStorage.getItem('registros')||'[]');
+  const resumoHTML = renderResumoHTML(registros);
+  let html = `<html><head><title>Impressão - Registros</title><meta charset="utf-8"><style>body{font-family:Arial;padding:12px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #444;padding:6px;text-align:left}th{background:#eee}</style></head><body>`;
+  html += `<h2>Resumo de Registros</h2>`;
+  html += resumoHTML;
+  if (registros.length>0){
+    html += '<h3>Registros</h3><table><tr>';
+    const keys = Object.keys(registros[0]);
+    keys.forEach(k=> html += '<th>' + k.replace(/_/g,' ') + '</th>');
+    html += '</tr>';
+    registros.forEach(r=>{
+      html += '<tr>';
+      keys.forEach(k=>{
+        let v = r[k];
+        if (Array.isArray(v)) v = v.join(', ');
+        html += '<td>' + (v!==undefined ? v : '') + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</table>';
+  }
+  html += '</body></html>';
+  const w = window.open();
+  w.document.write(html);
+  w.document.close();
+  setTimeout(()=>w.print(), 600);
+}
+
+function limparTudo(){
+  if(confirm("Deseja apagar TODOS os registros E o HISTÓRICO DE ANÁLISES?")){
+    localStorage.removeItem('registros');
+    localStorage.removeItem('analises_historico');
+    renderTable();
+    analiseResultado.innerHTML = '<p>Use os botões acima para iniciar a análise por cliente ou a média global.</p>';
+  }
+}
+
+renderTable();
+</script>
+
+</main>
+<footer>Desenvolvido por NEIDIVAN RIBEIRO</footer>
+</body>
+</html>
